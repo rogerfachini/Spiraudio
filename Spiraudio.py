@@ -9,6 +9,8 @@ class Config:
 
     AUDIO_FILE = 'audio/test.wav' #The audio file to play when the 'Play from File' option  is selected
 
+    CNCSERVER_ADDRESS = 'http://localhost:4242' #Change for an external CNCServer
+
     PAPER_RATIO = (9.0, 12.0)     #Ratio of the printing canvas (defaults to 9x12). MUST be a float
     PAPER_SIZE = 500              #Canvas size in pixels 
 
@@ -219,7 +221,7 @@ class CNCServerClient:
         self.logger = logging.getLogger('CNCClient')
         self.logger.debug('Client instance created!')
         try:
-            r = requests.get('http://localhost:4242/v1/settings/global',  timeout = 1)
+            r = requests.get(Config.CNCSERVER_ADDRESS+'/v1/settings/global',  timeout = 1)
             self.hasConnection = True
         except requests.exceptions.ConnectionError as er:
             self.logger.critical('Could not create connection to external server!')
@@ -233,7 +235,7 @@ class CNCServerClient:
         data = {'x':str(x),'y':str(y)}
         data_json = json.dumps(data)
         try:
-            r = requests.put('http://localhost:4242/v1/pen/', data=data, timeout = 0.01)
+            r = requests.put(Config.CNCSERVER_ADDRESS+'/v1/pen/', data=data, timeout = 0.01)
         except requests.exceptions.ReadTimeout:
             pass
         

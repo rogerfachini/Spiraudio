@@ -14,6 +14,9 @@ Requirements:
 Installation instrutions:
 
 0) Install python and its required modules
+
 1) Clone this repo into a new folder
+
 2) To run it, enter the command **python Spiraudio.py***
+
 3) (optional) To have Spiraudio launch its own version of CNCserver for robot printing, install CNCServer into a new folder called 'cncserver' inside the folder Spiraudio is in. 

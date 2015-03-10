@@ -218,6 +218,7 @@ class CNCServerClient:
     """
     hasConnection = False
     def __init__(self):
+        #Create Logging instance
         self.logger = logging.getLogger('CNCClient')
         self.logger.debug('Client instance created!')
         try:
@@ -226,9 +227,8 @@ class CNCServerClient:
         except requests.exceptions.ConnectionError as er:
             self.logger.critical('Could not create connection to external server!')
             self.hasConnection = False
-
-        if self.launchCncServer():
-            self.hasConnection = True
+            if self.launchCncServer():
+                self.hasConnection = True
 
     def setPenPos(self,x,y):
         if not self.hasConnection: return 

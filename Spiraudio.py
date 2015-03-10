@@ -44,6 +44,10 @@ except ImportError as er:
     time.sleep(2)
     exit()
 
+class _dummyFont:
+    def render(self, a,b,c,):
+        return pygame.Surface((0,0))
+
 
 class Audio:
     """
@@ -168,7 +172,6 @@ class Audio:
         data = [d[0] for d in data]
         return data 
 
-
 class Visuals:
     """
     Converts audio samples into pretty spiral patterns
@@ -221,35 +224,58 @@ class CNCServerClient:
         #Create Logging instance
         self.logger = logging.getLogger('CNCClient')
         self.logger.debug('Client instance created!')
+        
+        #Attempt to connect to an already running CNCServer instance
         try:
             r = requests.get(Config.CNCSERVER_ADDRESS+'/v1/settings/global',  timeout = 1)
             self.hasConnection = True
         except requests.exceptions.ConnectionError as er:
+            #If we cannot connect, send an error message
             self.logger.critical('Could not create connection to external server!')
             self.hasConnection = False
+
+            #And start our own internal CNCServer
             if self.launchCncServer():
                 self.hasConnection = True
 
     def setPenPos(self,x,y):
+        """
+        Set the position of the robot's implement
+        """       
         if not self.hasConnection: return 
+
+        #Assemble packet and compress it into a JSON formatted string
         data = {'x':str(x),'y':str(y)}
         data_json = json.dumps(data)
+
         try:
+            #Send the pen data to the server
             r = requests.put(Config.CNCSERVER_ADDRESS+'/v1/pen/', data=data, timeout = 0.01)
         except requests.exceptions.ReadTimeout:
+            #Ignore timeouts on the returned status
             pass
         
-    def setPenPosScaled(self,pos,size):
+    def setPenPosScaled(self, pos, size):
+        """
+        Sets the pen position to 'pos', but scaling it as a percentage of 'size'    
+        """
         x = 100*(pos[0]/float(size[0]))
         y = 100*(pos[1]/float(size[1]))
         self.setPenPos(x,y)
 
     def launchCncServer(self):
+        """
+        Looks for a built-in CNCServer instance at ../cncserver/ and launches it.
+        """
+        #Check if CNCserver actually exists first
         if os.path.exists("cncserver/cncserver.js"):
             self.logger.info('Built-In CNCServer exists!')
+            
+            #Start CNCServer as it's own process
             self.serverProcess = subprocess.Popen(['node', 'cncserver.js', Config.CNCSERVER_ARGS], 
                                                   stdout=subprocess.PIPE,
                                                   cwd = 'cncserver')
+            #Create
             serverLog = logging.getLogger('CNCServer')
             self.loggigngThread = threading.Thread(target=self._outputHandlingThread,
                                                    args = (serverLog, self.serverProcess,))
@@ -282,8 +308,13 @@ class Display:
         self.logger.debug('Pygame initalization complete')
         
         self.clock = pygame.time.Clock()
-        self.font = pygame.font.SysFont('consolas',12)
-        self.logger.debug('Font objects created')
+        try:
+            self.font = pygame.font.SysFont('consolas',12)
+            self.logger.debug('Font objects created')
+        except BaseException as er:
+            self.font = _dummyFont()
+            self.logger.exception(er)
+            self.logger.critical('Font Object could not load! Using dummy class...')
 
         pygame.display.set_caption('WaterColorBot Spiral Audio Paint')
 

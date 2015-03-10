@@ -316,7 +316,7 @@ class Display:
             self.logger.exception(er)
             self.logger.critical('Font Object could not load! Using dummy class...')
 
-        pygame.display.set_caption('WaterColorBot Spiral Audio Paint')
+        pygame.display.set_caption('Spiraudio')
 
         ratio = Config.PAPER_RATIO[1]/Config.PAPER_RATIO[0]
         size = (int(Config.PAPER_SIZE*ratio),Config.PAPER_SIZE)
@@ -373,7 +373,7 @@ class Display:
 
         self.display.blit(self.SurfCanvas, (5,20))
         self.display.blit(self.SurfGraph, (700,20))
-        r = self.font.render('WaterColorBot Canvas',1, (255,255,255))
+        r = self.font.render('Robot Canvas',1, (255,255,255))
         self.display.blit(r,(5,5))
 
         r = self.font.render('Input Audio',1, (255,255,255))

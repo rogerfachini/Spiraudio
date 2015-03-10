@@ -26,6 +26,7 @@ class Config:
     AUDIO_SAMPLE_RATE = 5000      #Number of audio samples per frame for the microphone
     INPUT_BLOCK_TIME = 0.005      #Time in seconds of each microphone sample
 
+
 #Import builtin modules first
 import math, time, datetime
 import logging, os, subprocess, threading, platform, struct, json
@@ -134,59 +135,80 @@ class Audio:
         return self.currentSample
 
     def _microphoneStreamRead(self):
+        #Update the current sample time
         self.timeNow = time.clock() - self.startTime
         try:
+            #Read a block of audio and unpack it
             block = self.stream.read(self.INPUT_FRAMES)  
             count = len(block)/2
             format = "%dh"%(count)
             shorts = struct.unpack(format, block)
         except IOError as error:
+            #Return an empty sample in the case of an error
             shorts = [0]
         return shorts
 
     def _fileRead(self):
+        #Update the current sample time and the playing status
         self.timeNow = time.clock() - self.startTime
         self.isRecording = self.stream.get_busy()
+
+        #Return an empty sample if there is no sample left
         if not self.isRecording: 
             return []
-        try:
-            a = int(self.AUDIO_RATE*self.timeNow)
-            data = self.soundData[a-30:a]
-            return [d[0] for d in data]
-        except BaseException as er:
-            print er
-            return []
+        #Create a pointer from the current time
+        pointer = int(self.AUDIO_RATE*self.timeNow)      
+
+        #Read the last thirty audio samples
+        data = self.soundData[pointer-30:pointer]
+
+        #Only return the left channel 
+        data = [d[0] for d in data]
+        return data 
+
 
 class Visuals:
     """
     Converts audio samples into pretty spiral patterns
     """
-    index = 0
-    pointA = (0,0)
-    pointC = (0,0)
+    pointA = (0,0) #The current point, with the audio mixed in
+    pointC = (0,0) #The current point, without the audio                  
     inputType = 'n'
-    def p2c(self, r, phi):
-            return (r * math.cos(phi), r * math.sin(phi))
+    def p2c(self, dist, angle):
+        """Converts between polar and cartesian coordinate systems"""
+        return (dist * math.cos(angle), dist * math.sin(angle))
 
     def spiral_points(self, arc=1, size=5):
-        self.pointA = (0,0)
+        """
+        Resets the spiral and starts it off. 
+        """
+        #Clear the two point variables
+        self.pointA = (0,0)  
         self.pointC = (0,0)
+
         self.arc = arc
-        self.r = arc
-        self.b = size/math.pi
-        self.phi = float(self.r) / self.b
+        self.dist = arc
+        self.b = size / math.pi
+        self.angle = float(self.dist) / self.b
 
     def increment_spiral(self, offset):
-        if self.inputType == 'f':
-            adj = offset/Config.VISUAL_OFFSET_FILE
-        elif self.inputType == 'm':
-            adj = offset/Config.VISUAL_OFFSET_MIC
-        else:
-            return
-        self.pointA = self.p2c(self.r+adj, self.phi)
-        self.pointC = self.p2c(self.r, self.phi)
-        self.phi += float(self.arc) / self.r
-        self.r = self.b * self.phi/2
+        """
+        Resets the spiral and starts it off. 
+        """
+        #Determine the adjustment factor by the config
+        if self.inputType == 'f':   adj = offset / Config.VISUAL_OFFSET_FILE
+        elif self.inputType == 'm': adj = offset / Config.VISUAL_OFFSET_MIC
+        else: return
+
+        #Calculate both the audio point and the clean point
+        self.pointA = self.p2c(self.dist + adj, self.angle)
+        self.pointC = self.p2c(self.dist, self.angle)
+
+        #Increment the angle
+        self.angle += float(self.arc) / self.dist
+
+        #Recalculate the spiral
+        self.dist = self.b * self.angle / 2
         
 class CNCServerClient:
     """

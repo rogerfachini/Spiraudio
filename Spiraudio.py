@@ -170,7 +170,7 @@ class Audio:
 
         #Only return the left channel 
         data = [d[0] for d in data]
-        return data 
+        return data
 
 class Visuals:
     """
@@ -275,23 +275,28 @@ class CNCServerClient:
             self.serverProcess = subprocess.Popen(['node', 'cncserver.js', Config.CNCSERVER_ARGS], 
                                                   stdout=subprocess.PIPE,
                                                   cwd = 'cncserver')
-            #Create
+            #Create a new logging instance for CNCServer 
             serverLog = logging.getLogger('CNCServer')
+
+            #Start a thread to log the output from the thread
             self.loggigngThread = threading.Thread(target=self._outputHandlingThread,
                                                    args = (serverLog, self.serverProcess,))
             self.loggigngThread.start()
-            #self.hasConnection = True
         else:
             self.logger.error('CNCServer not found at ../cncserver/cncserver.js')
 
     def _outputHandlingThread(self,logger, serverInstance):
+        #Send output from the CNCServer thread to the log
         while True:
+            #Read a line and strip the extra newline character. Blocking operation
             line = serverInstance.stdout.readline().replace('\n','')
-            if 'is ready to receive commands' in line:
-                self.hasConnection = True
             logger.info(line)
+
+            #If the output from CNCServer indicates it's ready, then we can send commands to it
+            if 'is ready to receive commands' in line: self.hasConnection = True
             
-class Display:
+            
+class Main:
     """
     The  Graphical Interface, which displays information about the current sample and output
     """
@@ -478,7 +483,7 @@ if __name__ == '__main__':
     #input.setInputToFile(Config.AUDIO_FILE)
     input.setInputToNone()
 
-    gui = Display()
+    gui = Main()
     gui.vis.spiral_points(Config.SPIRAL_ARC,
                           Config.SPIRAL_SIZE)
 

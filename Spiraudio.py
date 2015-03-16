@@ -37,7 +37,7 @@ import logging, os, subprocess, threading, platform, struct, json
 try:  
     import pygame
     from pygame.locals import *  
-    import pyaudio
+    import pyaudio                                       
     import requests
 except ImportError as er:
     print 'ERROR: One or more dependencies not met. \n',er
@@ -251,7 +251,7 @@ class CNCServerClient:
         try:
             #Send the pen data to the server
             r = requests.put(Config.CNCSERVER_ADDRESS+'/v1/pen/', data=data, timeout = 0.01)
-        except requests.exceptions.ReadTimeout:
+        except requests.exceptions.ReadTimeout, requests.exceptions.ConnectTimeout:
             #Ignore timeouts on the returned status
             pass
         
@@ -294,14 +294,14 @@ class CNCServerClient:
 
             #If the output from CNCServer indicates it's ready, then we can send commands to it
             if 'is ready to receive commands' in line: self.hasConnection = True
-            
-            
+                        
 class Main:
     """
-    The  Graphical Interface, which displays information about the current sample and output
+    The main body of the program: Mostly handles the UI and program window itself, 
+    but also controls timing and responds to events 
     """
-    graphIndex = 0
-    audioBuffer = []
+    graphIndex = 0 #Pointer for the audio  graph
+    audioBuffer = [] #Holds the stored audio for calculation
     pointlistA = [(0,0)]
     pointlistC = []
     lastBufferPoint = 0
@@ -338,7 +338,7 @@ class Main:
         self.vis = Visuals()
 
         self.display = pygame.display.set_mode((1150,530))
-  
+
     def handle_event(self, event):
         if event.type == QUIT:
             pygame.quit()
@@ -470,17 +470,17 @@ class Main:
         
         
 if __name__ == '__main__':
-    #Configure logging module and supress debug info from requests
+    #Configure logging module and supress debug info from Requests
     logging.basicConfig(level=logging.DEBUG,
                         format='[%(levelname)-8s] [%(name)s] %(message)s') 
     logging.getLogger("requests").setLevel(logging.WARNING)
 
+    #Instantiate a new CNCServer Client instance, and set the implement position to the center
     bot = CNCServerClient()
     bot.setPenPos(50,50)
 
+   
     input = Audio()
-    #input.setInputToMicrophone()
-    #input.setInputToFile(Config.AUDIO_FILE)
     input.setInputToNone()
 
     gui = Main()

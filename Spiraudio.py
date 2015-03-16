@@ -422,8 +422,9 @@ class Main:
         x = int(self.vis.pointA[0])
         y = int(self.vis.pointA[1])
         self.pointlistA.append((x,y))
-        bot.setPenPosScaled(self._convertCanvasOffset((x,y)),
-                            self.SurfCanvas.get_size())
+        if not self.inputType == 'n':
+            bot.setPenPosScaled(self._convertCanvasOffset((x,y)),
+                                self.SurfCanvas.get_size())
 
         x = int(self.vis.pointC[0])
         y = int(self.vis.pointC[1])

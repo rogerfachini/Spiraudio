@@ -7,7 +7,7 @@ Licensed under the GNU General Public License (see LICENSE.md)
 class Config:
     CNCSERVER_ARGS = "--botType=eggbot" #Any arguments to send to CNCServer on startup. 
 
-    AUDIO_FILE = 'audio/test.wav' #The audio file to play when the 'Play from File' option  is selected
+    AUDIO_FILE = 'audio/dersedreamers.wav' #The audio file to play when the 'Play from File' option  is selected
 
     CNCSERVER_ADDRESS = 'http://localhost:4242' #Change for an external CNCServer
 
@@ -20,13 +20,13 @@ class Config:
     BUFFER_INCREMENT_FILE = 0.01  
 
     VISUAL_OFFSET_MIC = 1000.0    #The smaller these are, the larger the audio spike will be on the spiral
-    VISUAL_OFFSET_FILE = 2500.0
+    VISUAL_OFFSET_FILE = 2000.0
 
     SPIRAL_ARC = 1                #Controls the size inbetween points on the spiral
     SPIRAL_SIZE = 15              #Controls the distance between loops of the spiral
 
     AUDIO_SAMPLE_RATE = 5000      #Number of audio samples per frame for the microphone
-    INPUT_BLOCK_TIME = 0.005      #Time in seconds of each microphone sample
+    INPUT_BLOCK_TIME = 0.01      #Time in seconds of each microphone sample
 
 
 #Import builtin modules first
@@ -198,11 +198,16 @@ class Visuals:
 
     def increment_spiral(self, offset):
         """
-        Resets the spiral and starts it off. 
+        Increments the spiral and calculates an offset point
         """
         #Determine the adjustment factor by the config
-        if self.inputType == 'f':   adj = offset / Config.VISUAL_OFFSET_FILE
-        elif self.inputType == 'm': adj = offset / Config.VISUAL_OFFSET_MIC
+        if offset == 0: adj = 0
+        elif self.inputType == 'f': 
+            adj = offset/Config.VISUAL_OFFSET_FILE
+            
+        elif self.inputType == 'm': 
+            offset = offset/Config.VISUAL_OFFSET_MIC
+            adj = math.log(math.fabs(offset))*(math.fabs(offset)/offset)
         else: return
 
         #Calculate both the audio point and the clean point

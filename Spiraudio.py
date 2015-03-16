@@ -251,7 +251,8 @@ class CNCServerClient:
         try:
             #Send the pen data to the server
             r = requests.put(Config.CNCSERVER_ADDRESS+'/v1/pen/', data=data, timeout = 0.01)
-        except requests.exceptions.ReadTimeout, requests.exceptions.ConnectTimeout:
+        except requests.exceptions.ReadTimeout: pass
+        except requests.exceptions.ConnectTimeout:
             #Ignore timeouts on the returned status
             pass
         

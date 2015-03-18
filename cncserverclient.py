@@ -8,14 +8,17 @@ class CNCServerClient:
     Connects to CNCServer and sends commands to the WaterColorBot for drawing purpouses
     """
     hasConnection = False
-    def __init__(self, cncserver_address):
+
+    def __init__(self, cncserver_address, cncserver_args=""):
         # Create Logging instance
         self.logger = logging.getLogger('CNCClient')
         self.logger.debug('Client instance created!')
+        self.cncserver_address = cncserver_address
+        self.cncserver_args = cncserver_args
 
         # Attempt to connect to an already running CNCServer instance
         try:
-            r = requests.get(cncserver_address+'/v1/settings/global',  timeout = 1)
+            r = requests.get(self.cncserver_address+'/v1/settings/global',  timeout = 1)
             self.hasConnection = True
         except requests.exceptions.ConnectionError as er:
             # If we cannot connect, send an error message
@@ -38,7 +41,7 @@ class CNCServerClient:
 
         try:
             # Send the pen data to the server
-            r = requests.put(Config.CNCSERVER_ADDRESS+'/v1/pen/', data=data, timeout = 0.01)
+            r = requests.put(self.cncserver_address+'/v1/pen/', data=data, timeout = 0.01)
         except requests.exceptions.ReadTimeout: pass
         except requests.exceptions.ConnectTimeout:
             # Ignore timeouts on the returned status
@@ -61,7 +64,7 @@ class CNCServerClient:
             self.logger.info('Built-In CNCServer exists!')
 
             # Start CNCServer as it's own process
-            self.serverProcess = subprocess.Popen(['node', 'cncserver.js', Config.CNCSERVER_ARGS],
+            self.serverProcess = subprocess.Popen(['node', 'cncserver.js', self.cncserver_args],
                                                   stdout=subprocess.PIPE,
                                                   cwd = 'cncserver')
             # Create a new logging instance for CNCServer

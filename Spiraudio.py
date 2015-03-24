@@ -4,30 +4,49 @@ Licensed under the GNU General Public License (see LICENSE.md)
 """
 #Global settings and constants stored here
 class Config:
-    CNCSERVER_ARGS = "--botType=eggbot" #Any arguments to send to CNCServer on startup. 
+    CONFIG_FILE="default.cfg"
 
-    AUDIO_FILE = 'audio/test.wav' #The audio file to play when the 'Play from File' option  is selected
-
-    CNCSERVER_ADDRESS = 'http://localhost:4242' #Change for an external CNCServer
-
-    SVG_OUT_PATH = 'testing.svg'  #The file that the new SVG will be saved into
-
+    """--------BELOW HERE ARE DEFAULTS--------"""
+    
+    CNCSERVER_ARGS = "" #Any arguments to send to CNCServer on startup.
+    CNCSERVER_ADDRESS = 'http://localhost:4242' #Change for an external CNCServer 
+    AUDIO_FILE = '' #The audio file to play when the 'Play from File' option  is selected
+    SVG_OUT_PATH = 'output.svg'  #The file that the new SVG will be saved into
     PAPER_RATIO = (9.0, 12.0)     #Ratio of the printing canvas (defaults to 9x12). MUST be a float
     PAPER_SIZE = 500              #Canvas size in pixels 
-
     SAMPLE_TICK_MS = 10           #Interval, in ms, to sample the audio and draw a point. 
-
     BUFFER_INCREMENT_MIC = 0.05   #How much to increment the audio graph by. 
     BUFFER_INCREMENT_FILE = 0.01  
-
     VISUAL_OFFSET_MIC = 8500.0    #The smaller these are, the larger the audio spike will be on the spiral
     VISUAL_OFFSET_FILE = 2000.0
-
     SPIRAL_ARC = 1                #Controls the size inbetween points on the spiral
     SPIRAL_SIZE = 15              #Controls the distance between loops of the spiral
-
     AUDIO_SAMPLE_RATE = 2000      #Number of audio samples per frame for the microphone
     INPUT_BLOCK_TIME = 0.01      #Time in seconds of each microphone sample
+
+    def loadFromFile(self):
+        self._cfg = ConfigParser.ConfigParser()
+        logging.info('Loading config file: %s',self.CONFIG_FILE)
+        self._cfg.read(self.CONFIG_FILE)
+        self.SPIRAL_SIZE = float(self._cfg.get('Spiral','size'))
+        self.SPIRAL_ARC  = float(self._cfg.get('Spiral','pointdistance'))
+        self.BUFFER_INCREMENT_FILE = float(self._cfg.get('Spiral','graphincrementfile'))
+        self.BUFFER_INCREMENT_MIC  = float(self._cfg.get('Spiral','graphincrementmic'))
+        self.VISUAL_OFFSET_FILE = float(self._cfg.get('Spiral','visualscalefile'))
+        self.VISUAL_OFFSET_MIC  = float(self._cfg.get('Spiral','visualscalemic'))
+        self.SAMPLE_TICK_MS = int(self._cfg.get('Spiral','sampledelayms'))
+        self.PAPER_SIZE = float(self._cfg.get('Spiral','papersize'))
+        self.PAPER_RATIO = eval(self._cfg.get('Spiral','paperratio'))
+
+        self.CNCSERVER_ARGS = self._cfg.get('CNCServer','startuparguments')
+        self.CNCSERVER_ADDRESS = self._cfg.get('CNCServer','externaladdress')
+
+        self.AUDIO_SAMPLE_RATE = float(self._cfg.get('Microphone','samplerate'))
+        self.INPUT_BLOCK_TIME = float(self._cfg.get('Microphone','inputblocktime'))
+
+        self.AUDIO_FILE = self._cfg.get('Files','audioinput')
+        self.SVG_OUT_PATH = self._cfg.get('Files','svgoutput')
+
 
 
 #Import builtin modules first
@@ -40,6 +59,7 @@ try:
     from pygame.locals import *  
     import pyaudio                                       
     import requests
+    import ConfigParser
 except ImportError as er:
     print 'ERROR: One or more dependencies not met. \n',er
     time.sleep(2)
@@ -524,6 +544,9 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG,
                         format='[%(levelname)-8s] [%(name)s] %(message)s') 
     logging.getLogger("requests").setLevel(logging.WARNING)
+
+    Config = Config()
+    Config.loadFromFile()
 
     #Instantiate a new CNCServer Client instance, and set the implement position to the center
     bot = CNCServerClient()

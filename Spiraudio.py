@@ -6,10 +6,12 @@ Licensed under the GNU General Public License (see LICENSE.md)
 class Config:
     CONFIG_FILE="default.cfg"
 
-    CNCSERVER_ARGS = "--botType=eggbot" #Any arguments to send to CNCServer on startup.
+    """--------BELOW HERE ARE DEFAULTS--------"""
+    
+    CNCSERVER_ARGS = "" #Any arguments to send to CNCServer on startup.
     CNCSERVER_ADDRESS = 'http://localhost:4242' #Change for an external CNCServer 
-    AUDIO_FILE = 'audio/test.wav' #The audio file to play when the 'Play from File' option  is selected
-    SVG_OUT_PATH = 'testing.svg'  #The file that the new SVG will be saved into
+    AUDIO_FILE = '' #The audio file to play when the 'Play from File' option  is selected
+    SVG_OUT_PATH = 'output.svg'  #The file that the new SVG will be saved into
     PAPER_RATIO = (9.0, 12.0)     #Ratio of the printing canvas (defaults to 9x12). MUST be a float
     PAPER_SIZE = 500              #Canvas size in pixels 
     SAMPLE_TICK_MS = 10           #Interval, in ms, to sample the audio and draw a point. 

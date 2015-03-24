@@ -2,14 +2,15 @@
 Code written by Roger Fachini for RoboGames 2015. 
 Licensed under the GNU General Public License (see LICENSE.md) 
 """
-
 #Global settings and constants stored here
 class Config:
     CNCSERVER_ARGS = "--botType=eggbot" #Any arguments to send to CNCServer on startup. 
 
-    AUDIO_FILE = 'audio/dersedreamers.wav' #The audio file to play when the 'Play from File' option  is selected
+    AUDIO_FILE = 'audio/test.wav' #The audio file to play when the 'Play from File' option  is selected
 
     CNCSERVER_ADDRESS = 'http://localhost:4242' #Change for an external CNCServer
+
+    SVG_OUT_PATH = 'testing.svg'  #The file that the new SVG will be saved into
 
     PAPER_RATIO = (9.0, 12.0)     #Ratio of the printing canvas (defaults to 9x12). MUST be a float
     PAPER_SIZE = 500              #Canvas size in pixels 
@@ -19,13 +20,13 @@ class Config:
     BUFFER_INCREMENT_MIC = 0.05   #How much to increment the audio graph by. 
     BUFFER_INCREMENT_FILE = 0.01  
 
-    VISUAL_OFFSET_MIC = 1000.0    #The smaller these are, the larger the audio spike will be on the spiral
+    VISUAL_OFFSET_MIC = 8500.0    #The smaller these are, the larger the audio spike will be on the spiral
     VISUAL_OFFSET_FILE = 2000.0
 
     SPIRAL_ARC = 1                #Controls the size inbetween points on the spiral
     SPIRAL_SIZE = 15              #Controls the distance between loops of the spiral
 
-    AUDIO_SAMPLE_RATE = 5000      #Number of audio samples per frame for the microphone
+    AUDIO_SAMPLE_RATE = 2000      #Number of audio samples per frame for the microphone
     INPUT_BLOCK_TIME = 0.01      #Time in seconds of each microphone sample
 
 
@@ -48,7 +49,43 @@ class _dummyFont:
     def render(self, a,b,c,):
         return pygame.Surface((0,0))
 
+class SVG_handler:
+    SAVEEVENT = USEREVENT+1
+    def __init__(self):
+        global svgwrite
+        self.logger = logging.getLogger('SVG_handler')
+        self.hasModule = True
+        self.currentFile = None
+        
+        try:
+            import svgwrite
+        except ImportError:
+            self.hasModule = False
+            self.logger.error("Module 'svgwrite' not importable! Svg saving will not work!")
 
+    def newFile(self, name, profile='tiny'):
+        if not self.hasModule: return
+        if not self.currentFile == None: self.currentFile.save()
+        self.currentFile = svgwrite.Drawing(name, profile=profile) 
+        self.path = name
+        self.pathList = [(Config.PAPER_SIZE/2,
+                          Config.PAPER_SIZE/2)]
+        self.logger.info('Created New SVG at path: %s',self.path)
+
+    def writeNewPathCoordinate(self, x,y,color): 
+        if not self.hasModule: return
+        x = Config.PAPER_SIZE/2+x
+        y = Config.PAPER_SIZE/2+y
+        s = svgwrite.rgb(color[0], color[1], color[2], '%')
+        line = self.currentFile.line(self.pathList[-1], (x, y), stroke = s)
+        self.currentFile.add(line)
+        self.pathList.append((x,y))
+
+    def saveFile(self):
+        if not self.hasModule: return
+        self.currentFile.save()
+        self.logger.info('Wrote new changes to file: %s', self.path) 
+                
 class Audio:
     """
     Gathers audio samples from different sources, based on OS type and method selected
@@ -313,6 +350,7 @@ class Main:
     lastBufferPoint = 0
     inputType = 'n'
     drawTracer = False
+
     def __init__(self):
         self.logger = logging.getLogger('GUI')
         pygame.init()
@@ -361,6 +399,8 @@ class Main:
                 self.clearCanvas()
             elif event.unicode == 't':
                 self.drawTracer = not self.drawTracer
+            elif event.unicode == 's':
+                svg.saveFile()
                 
             gui.inputType = input.inputType
             gui.vis.inputType = input.inputType
@@ -412,15 +452,16 @@ class Main:
         r = self.font.render('  c - Clear canvas and audio buffers',1, (255,255,255))
         self.display.blit(r,(700,180))
         self.display.blit(self.font.render('  t - Toggle drawing red line on perfect spiral',1, (255,255,255)),(700,190))
+        self.display.blit(self.font.render('  s - Save the current drawing as a SVG file. ',1, (255,255,255)),(700,200))
 
         if self.inputType == 'm': text = 'Input Type: MICROPHONE'
         elif self.inputType == 'f': text = 'Input Type: FILE'
         elif self.inputType == 'n': text = 'Input Type: NONE'
-        self.display.blit(self.font.render(text,1, (255,255,255)),(700,210))
+        self.display.blit(self.font.render(text,1, (255,255,255)),(700,240))
 
         if self.drawTracer: text = 'Draw Tracer: True'
         else: text = 'Draw Tracer: False'
-        self.display.blit(self.font.render(text,1, (255,255,255)),(700,220))
+        self.display.blit(self.font.render(text,1, (255,255,255)),(700,250))
     
     def render_canvas(self):
         #self.SurfCanvas.fill((255,255,255))
@@ -430,6 +471,8 @@ class Main:
         if not self.inputType == 'n':
             bot.setPenPosScaled(self._convertCanvasOffset((x,y)),
                                 self.SurfCanvas.get_size())
+
+            svg.writeNewPathCoordinate(x,y,(0,0,255))
 
         x = int(self.vis.pointC[0])
         y = int(self.vis.pointC[1])
@@ -486,6 +529,8 @@ if __name__ == '__main__':
     bot = CNCServerClient()
     bot.setPenPos(50,50)
 
+    svg = SVG_handler()
+    svg.newFile('testing.svg')
    
     input = Audio()
     input.setInputToNone()

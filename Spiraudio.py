@@ -134,6 +134,9 @@ class Audio:
         Set the input source to the specified file. 
         Supported file types include OGG, XM, WAV, and MOD. MP3 support is limited, so beware
         """
+        if not file:
+            self.logger.warning('Blank file selected, will not switch audio source.')
+            return
         self.AUDIO_RATE = 22050      
         #Stop a currently playing audio file if there is one          
         if self.inputType == 'f': self.stream.stop()

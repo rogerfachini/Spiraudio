@@ -269,7 +269,8 @@ class Visuals:
             
         elif self.inputType == 'm': 
             offset = offset/Config.VISUAL_OFFSET_MIC
-            adj = math.log(math.fabs(offset))*(math.fabs(offset)/offset)
+            #adj = math.log(math.fabs(offset))*(math.fabs(offset)/offset)
+            adj=offset
         else: return
 
         #Calculate both the audio point and the clean point

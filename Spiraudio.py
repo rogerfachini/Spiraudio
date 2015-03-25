@@ -41,7 +41,7 @@ class Config:
         self.CNCSERVER_ARGS = self._cfg.get('CNCServer','startuparguments')
         self.CNCSERVER_ADDRESS = self._cfg.get('CNCServer','externaladdress')
 
-        self.AUDIO_SAMPLE_RATE = float(self._cfg.get('Microphone','samplerate'))
+        self.AUDIO_SAMPLE_RATE = int(self._cfg.get('Microphone','samplerate'))
         self.INPUT_BLOCK_TIME = float(self._cfg.get('Microphone','inputblocktime'))
 
         self.AUDIO_FILE = self._cfg.get('Files','audioinput')

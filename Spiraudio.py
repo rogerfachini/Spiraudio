@@ -61,7 +61,9 @@ try:
     import requests
     import ConfigParser
 except ImportError as er:
-    print 'ERROR: One or more dependencies not met. \n',er
+    print 'ERROR: One or more dependencies not met. \n'
+    logging.basicConfig(level=logging.DEBUG)
+    logging.exception(er)
     time.sleep(2)
     exit()
 

@@ -213,7 +213,7 @@ class Audio:
             shorts = struct.unpack(format, block)
         except IOError as error:
             #Return an empty sample in the case of an error
-            shorts = [0]
+            shorts = []
         return shorts
 
     def _fileRead(self):
@@ -513,7 +513,7 @@ class Main:
             except ValueError:  pass
           
     def RenderAudioGraphPoint(self, point):
-        p = point/700+50
+        p = point/800+50
         self.SurfGraph.set_at((int(self.graphIndex),p),(0,0,255))
         if self.inputType == 'f':
             self.graphIndex += Config.BUFFER_INCREMENT_FILE

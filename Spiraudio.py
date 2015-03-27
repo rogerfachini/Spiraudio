@@ -458,7 +458,9 @@ class Main:
         self.display.fill((25,25,25))
         self.render_canvas()
 
-        self.display.blit(self.SurfCanvas, (5,20))
+        ratio = Config.PAPER_RATIO[1]/Config.PAPER_RATIO[0]
+        size = (int(500*ratio),500)
+        self.display.blit(pygame.transform.scale(self.SurfCanvas, size), (5,20))
         self.display.blit(self.SurfGraph, (700,20))
         r = self.font.render('Robot Canvas',1, (255,255,255))
         self.display.blit(r,(5,5))
@@ -521,6 +523,8 @@ class Main:
         if self.drawTracer:
             try: pygame.draw.lines(self.SurfCanvas, (255,0,0), False, self.pointlistC[-2:])
             except ValueError:  pass
+        
+
           
     def RenderAudioGraphPoint(self, point):
         p = point/800+50

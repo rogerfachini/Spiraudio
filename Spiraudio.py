@@ -575,4 +575,4 @@ if __name__ == '__main__':
             gui.audioBuffer.append(point)
             gui.RenderAudioGraphPoint(point)
         gui.recordingTime = input.timeNow
-        gui.update()
+        gui.update(80)

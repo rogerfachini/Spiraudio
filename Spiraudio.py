@@ -94,20 +94,30 @@ class SVG_handler:
                           Config.PAPER_SIZE/2)]
         self.logger.info('Created New SVG at path: %s',self.path)
 
-    def writeNewPathCoordinate(self, x,y,color): 
+    def writeNewPathCoordinate(self, x,y): 
         if not self.hasModule: return
-        x = Config.PAPER_SIZE/2+x
-        y = Config.PAPER_SIZE/2+y
-        s = svgwrite.rgb(color[0], color[1], color[2], '%')
-        line = self.currentFile.line(self.pathList[-1], (x, y), stroke = s)
-        self.currentFile.add(line)
-        self.pathList.append((x,y))
+        
+        self.C.append((x,y))
 
     def saveFile(self):
         if not self.hasModule: return
+        self.logger.info('Converting point list...')
+        color = (0,0,255)
+        s = svgwrite.rgb(color[0], color[1], color[2], '%')
+        points = [self._convertCoordinate(x) for x in self.pathList]
+        self.logger.info('Writing points to file...')
+        for idx in range(1,len(points)): 
+            line = self.currentFile.line(points[idx-1], points[idx], stroke = s)
+            self.currentFile.add(line)
+        self.currentFile.add(self.currentFile.text('File: %s'%Config.AUDIO_FILE, insert = (5,15), fill='black'))
         self.currentFile.save()
         self.logger.info('Wrote new changes to file: %s', self.path) 
-                
+
+    def _convertCoordinate(self, coord):
+        x = Config.PAPER_SIZE/2+coord[0]
+        y = Config.PAPER_SIZE/2+coord[1]
+        return (x,y)
+
 class Audio:
     """
     Gathers audio samples from different sources, based on OS type and method selected
@@ -498,7 +508,7 @@ class Main:
             bot.setPenPosScaled(self._convertCanvasOffset((x,y)),
                                 self.SurfCanvas.get_size())
 
-            svg.writeNewPathCoordinate(x,y,(0,0,255))
+            svg.pathList = self.pointlistA
 
         x = int(self.vis.pointC[0])
         y = int(self.vis.pointC[1])

@@ -376,6 +376,7 @@ class Main:
     lastBufferPoint = 0
     inputType = 'n'
     drawTracer = False
+    consoleIdx = 0
 
     def __init__(self):
         self.logger = logging.getLogger('GUI')
@@ -401,6 +402,7 @@ class Main:
         self.SurfCanvas = pygame.Surface(size)
         self.SurfCanvas.fill((255,255,255))
         self.SurfGraph = pygame.Surface((420,100))
+        self.SurfConsole = pygame.Surface((500,600))
         self.pointlistC.append(self._convertCanvasOffset((0,0)))
 
         self.logger.debug('Created Canvas surface with size %s and ratio %s',size,ratio)
@@ -455,6 +457,7 @@ class Main:
 
         r = self.font.render('Input Audio',1, (255,255,255))
         self.display.blit(r,(730,5))
+        self.display.blit(self.SurfConsole,(680,300))
 
         self.render_status()
         pygame.display.update()
@@ -511,6 +514,12 @@ class Main:
         if self.drawTracer:
             try: pygame.draw.lines(self.SurfCanvas, (255,0,0), False, self.pointlistC[-2:])
             except ValueError:  pass
+
+    def render_console(self, surfaceList):
+        for s in surfaceList[self.consoleIdx:]:
+            self.SurfConsole.blit(s, (5,self.consoleIdx*12))
+            self.consoleIdx += 1
+        self.consoleIdx = len(surfaceList)
           
     def RenderAudioGraphPoint(self, point):
         p = point/800+50
@@ -544,12 +553,42 @@ class Main:
         bot.setPenPos(50,50)
         self.logger.info('Cleared Canvas!')
         
-        
+class builtinConsole(logging.Handler): # Inherit from logging.Handler
+        def __init__(self):
+                # run the regular Handler __init__
+                logging.Handler.__init__(self)
+                pygame.font.init()
+                self.font = pygame.font.SysFont("Consolas", 10,True)
+                self.renderOut = []
+
+        def emit(self, record):
+                text = self.format(record)
+                if   'DEBUG' in text:  color=(0,255,255)
+                elif 'INFO' in text: color=(0,0,255)
+                elif 'WARNING' in text: color=(255,0,255)
+                elif 'ERROR' in text: color=(255,0,0)
+                elif 'CRITICAL' in text: color=(255,255,0)
+                else: color = (255,255,255)
+                try:
+                    self.renderOut.append(self.font.render(text, 1,color))
+                except BaseException  as er: 
+                    print 'LOGGER: Error parsing string: "%s"\nER: %s'%(text, er)
+
+
+
+
 if __name__ == '__main__':
     #Configure logging module and supress debug info from Requests
     logging.basicConfig(level=logging.DEBUG,
                         format='[%(levelname)-8s] [%(name)s] %(message)s') 
     logging.getLogger("requests").setLevel(logging.WARNING)
+    forString = '[%(name)-8s] [%(levelname)s] - %(message)s'
+    cf = logging.Formatter(forString)
+    
+    testHandler = builtinConsole()
+    testHandler.setFormatter(cf)
+
+    logging.getLogger().addHandler(testHandler)
 
     Config = Config()
     Config.loadFromFile()
@@ -576,3 +615,4 @@ if __name__ == '__main__':
             gui.RenderAudioGraphPoint(point)
         gui.recordingTime = input.timeNow
         gui.update(80)
+        gui.render_console(testHandler.renderOut)

@@ -24,6 +24,9 @@ class Config:
     AUDIO_SAMPLE_RATE = 2000      #Number of audio samples per frame for the microphone
     INPUT_BLOCK_TIME = 0.01      #Time in seconds of each microphone sample
 
+    PEN_DOWN = 0
+    PWN_UP = 1
+
     def loadFromFile(self):
         self._cfg = ConfigParser.ConfigParser()
         logging.info('Loading config file: %s',self.CONFIG_FILE)
@@ -46,6 +49,9 @@ class Config:
 
         self.AUDIO_FILE = self._cfg.get('Files','audioinput')
         self.SVG_OUT_PATH = self._cfg.get('Files','svgoutput')
+
+        self.PEN_UP = self._cfg.get('CNCServer','penup')
+        self.PEN_DOWN = self._cfg.get('CNCServer','pendown')
 
 
 
@@ -109,7 +115,7 @@ class SVG_handler:
         for idx in range(1,len(points)): 
             line = self.currentFile.line(points[idx-1], points[idx], stroke = s)
             self.currentFile.add(line)
-        self.currentFile.add(self.currentFile.text('File: %s'%Config.AUDIO_FILE, insert = (5,15), fill='black'))
+        #self.currentFile.add(self.currentFile.text('File: %s'%Config.AUDIO_FILE, insert = (5,15), fill='black'))
         self.currentFile.save()
         self.logger.info('Wrote new changes to file: %s', self.path) 
 
@@ -297,6 +303,7 @@ class CNCServerClient:
     """
     Connects to CNCServer and sends commands to the WaterColorBot for drawing purpouses
     """
+    penState = 0
     hasConnection = False
     def __init__(self):
         #Create Logging instance
@@ -324,6 +331,7 @@ class CNCServerClient:
 
         #Assemble packet and compress it into a JSON formatted string
         data = {'x':str(x),'y':str(y)}
+        print self.penState
         data_json = json.dumps(data)
 
         try:
@@ -373,6 +381,23 @@ class CNCServerClient:
 
             #If the output from CNCServer indicates it's ready, then we can send commands to it
             if 'is ready to receive commands' in line: self.hasConnection = True
+
+    def setPenState(self, state):
+        self.penState = state
+        if not self.hasConnection: return 
+
+        #Assemble packet and compress it into a JSON formatted string
+        data = {"state": self.penState}
+        print self.penState
+        data_json = json.dumps(data)
+
+        try:
+            #Send the pen data to the server
+            r = requests.put(Config.CNCSERVER_ADDRESS+'/v1/pen/', data=data, timeout = 0.01)
+        except requests.exceptions.ReadTimeout: pass
+        except requests.exceptions.ConnectTimeout:
+            #Ignore timeouts on the returned status
+            pass
                         
 class Main:
     """
@@ -507,8 +532,11 @@ class Main:
         y = int(self.vis.pointA[1])
         self.pointlistA.append((x,y))
         if not self.inputType == 'n':
+            bot.setPenState(Config.PEN_DOWN)
             bot.setPenPosScaled(self._convertCanvasOffset((x,y)),
                                 self.SurfCanvas.get_size())
+        else:
+            bot.setPenState(Config.PEN_UP)
 
             svg.pathList = self.pointlistA
 

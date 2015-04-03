@@ -313,6 +313,7 @@ class CNCServerClient:
     Connects to CNCServer and sends commands to the WaterColorBot for drawing purpouses
     """
     hasConnection = False
+    serverOutput = false
     def __init__(self):
         #Create Logging instance
         self.logger = logging.getLogger('CNCClient')
@@ -372,22 +373,30 @@ class CNCServerClient:
             #Create a new logging instance for CNCServer 
             serverLog = logging.getLogger('CNCServer')
 
+            #When set to false the log output loop will terminate
+            self.serverOutput = True
+
             #Start a thread to log the output from the thread
             self.loggigngThread = threading.Thread(target=self._outputHandlingThread,
-                                                   args = (serverLog, self.serverProcess,))
+                                                   args = (serverLog, self.serverProcess,self.serverOutput,))
+            self.loggigngThread.daemon = True
             self.loggigngThread.start()
         else:
             self.logger.error('CNCServer not found at ../cncserver/cncserver.js')
 
-    def _outputHandlingThread(self,logger, serverInstance):
+    def _outputHandlingThread(self,logger, serverInstance, isAlive):
         #Send output from the CNCServer thread to the log
-        while True:
+        while isAlive:
             #Read a line and strip the extra newline character. Blocking operation
             line = serverInstance.stdout.readline().replace('\n','')
-            logger.info(line)
-
+            if line: logger.info(line)
             #If the output from CNCServer indicates it's ready, then we can send commands to it
             if 'is ready to receive commands' in line: self.hasConnection = True
+
+    def killServer(self):
+        if self.serverOutput:
+            self.serverOutput = False
+            self.serverProcess.terminate()
                         
 class Main:
     """
@@ -440,7 +449,7 @@ class Main:
     def handle_event(self, event):
         if event.type == QUIT:
             pygame.quit()
-            quit()
+            bot.killServer()
 
         elif event.type == KEYDOWN:
             if event.unicode == 'm':
@@ -587,9 +596,7 @@ class Main:
                           Config.SPIRAL_SIZE,
                           self.colorIdx*math.pi)
         
-        
-        
-        
+         
 if __name__ == '__main__':
     #Configure logging module and supress debug info from Requests
     logging.basicConfig(level=logging.DEBUG,
@@ -613,11 +620,18 @@ if __name__ == '__main__':
     gui.vis.spiral_points(Config.SPIRAL_ARC,
                           Config.SPIRAL_SIZE)
 
-   
-    while True:
-        a = input.getCurrentSample()
-        for point in a:
-            gui.audioBuffer.append(point)
-            gui.RenderAudioGraphPoint(point)
-        gui.recordingTime = input.timeNow
-        gui.update(80)
+    try:
+        while True:
+            a = input.getCurrentSample()
+            for point in a:
+                gui.audioBuffer.append(point)
+                gui.RenderAudioGraphPoint(point)
+            gui.recordingTime = input.timeNow
+            gui.update(80)
+    except KeyboardInterrupt:
+        logging.warning('Program terminated by user!')
+        bot.killServer()
+        pygame.quit()
+        exit()
+    except BaseException as er:
+        logging.exception(er)

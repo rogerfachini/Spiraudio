@@ -110,10 +110,12 @@ class SVG_handler:
             s = svgwrite.rgb(color[0], color[1], color[2], '%')
             points = [self._convertCoordinate(x) for x in self.pathList[idx]]
             self.logger.info('Writing points to file...')
+            string = "M%i %i"%points[0]
             for idx in range(1,len(points)): 
-                line = self.currentFile.line(points[idx-1], points[idx], stroke = s)
-                self.currentFile.add(line)
-        self.currentFile.add(self.currentFile.text('File: %s'%Config.AUDIO_FILE, insert = (5,15), fill='black'))
+                string += " L%i %i"%points[idx]
+            line = self.currentFile.path(d=string, stroke = s, fill="none")
+            self.currentFile.add(line)
+
         self.currentFile.save()
         self.logger.info('Wrote new changes to file: %s', self.path) 
 

@@ -52,10 +52,12 @@ class Config:
 
 
 #Import builtin modules first
+print 'Python has started, importing builtin modules...'
 import math, time, datetime
 import logging, os, subprocess, threading, platform, struct, json
 
 #Import dependencies in a try statement to give a more user-friendly error message
+print 'Importing non-standard libraries (this may take some time on the first execution of the software)...'
 try:  
     import pygame
     from pygame.locals import *  
@@ -63,11 +65,16 @@ try:
     import requests
     import ConfigParser
 except ImportError as er:
-    print 'ERROR: One or more dependencies not met. \n'
+    print 'ERROR: One or more dependencies not met:'
     logging.basicConfig(level=logging.DEBUG)
     logging.exception(er)
     time.sleep(2)
     exit()
+
+if 'windows' in platform.platform():
+    os.system('cls')
+else:
+    os.system('cls')
 
 class _dummyFont:
     def render(self, a,b,c,):

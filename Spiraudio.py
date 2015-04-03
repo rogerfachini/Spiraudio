@@ -24,7 +24,7 @@ class Config:
     AUDIO_SAMPLE_RATE = 2000      #Number of audio samples per frame for the microphone
     INPUT_BLOCK_TIME = 0.01      #Time in seconds of each microphone sample
 
-    COLORS = [(0,0,0), (255,0,0,),(0,255,0),(0,0,255), (255,255,0), (0,255,255)]
+    COLORS = [(0,255,0),(0,0,255), (255,255,0), (0,255,255)]
 
     def loadFromFile(self):
         self._cfg = ConfigParser.ConfigParser()
@@ -74,6 +74,7 @@ class _dummyFont:
         return pygame.Surface((0,0))
 
 class SVG_handler:
+
     SAVEEVENT = USEREVENT+1
     def __init__(self):
         global svgwrite
@@ -104,13 +105,14 @@ class SVG_handler:
     def saveFile(self):
         if not self.hasModule: return
         self.logger.info('Converting point list...')
-        color = (0,0,255)
-        s = svgwrite.rgb(color[0], color[1], color[2], '%')
-        points = [self._convertCoordinate(x) for x in self.pathList]
-        self.logger.info('Writing points to file...')
-        for idx in range(1,len(points)): 
-            line = self.currentFile.line(points[idx-1], points[idx], stroke = s)
-            self.currentFile.add(line)
+        for idx in range(0,len(self.pathList)):
+            color = Config.COLORS[idx]
+            s = svgwrite.rgb(color[0], color[1], color[2], '%')
+            points = [self._convertCoordinate(x) for x in self.pathList[idx]]
+            self.logger.info('Writing points to file...')
+            for idx in range(1,len(points)): 
+                line = self.currentFile.line(points[idx-1], points[idx], stroke = s)
+                self.currentFile.add(line)
         self.currentFile.add(self.currentFile.text('File: %s'%Config.AUDIO_FILE, insert = (5,15), fill='black'))
         self.currentFile.save()
         self.logger.info('Wrote new changes to file: %s', self.path) 
@@ -385,13 +387,14 @@ class Main:
     """
     graphIndex = 0 #Pointer for the audio  graph
     audioBuffer = [] #Holds the stored audio for calculation
-    pointlistA = [(0,0)]
+    pointlistA = [[(0,0)]]
     pointlistC = []
     lastBufferPoint = 0
     inputType = 'n'
     drawTracer = False
-    spirals = []
     colorIdx = 0 
+    pointIdx = 0
+    
 
     def __init__(self):
         self.logger = logging.getLogger('GUI')
@@ -513,7 +516,7 @@ class Main:
         #self.SurfCanvas.fill((255,255,255))
         x = int(self.vis.pointA[0])
         y = int(self.vis.pointA[1])
-        self.pointlistA.append((x,y))
+        self.pointlistA[self.pointIdx].append((x,y))
         if not self.inputType == 'n':
             bot.setPenPosScaled(self._convertCanvasOffset((x,y)),
                                 self.SurfCanvas.get_size())
@@ -524,7 +527,7 @@ class Main:
         y = int(self.vis.pointC[1])
         self.pointlistC.append(self._convertCanvasOffset((x,y)))
         
-        points = [self._convertCanvasOffset(p) for p in self.pointlistA]
+        points = [self._convertCanvasOffset(p) for p in self.pointlistA[self.pointIdx]]
 
         
         pygame.draw.lines(self.SurfCanvas, Config.COLORS[self.colorIdx], False, points[-2:],2)
@@ -558,7 +561,7 @@ class Main:
         self.audioBuffer = []
         self.graphIndex = 0
         self.lastBufferPoint = 0
-        self.pointlistA = [(0,0)]
+        self.pointlistA = [[(0,0)]]
         self.pointlistC = []
         self.SurfCanvas.fill((255,255,255))
         self.SurfGraph.fill((0,0,0))
@@ -568,11 +571,12 @@ class Main:
     def newSpiral(self, offset):
         self.vis = Visuals()
         
-        self.colorIdx += 1   
-        print self.colorIdx     
+        self.colorIdx += 1 
+        self.pointIdx += 1  
+        self.pointlistA.append([(0,0)])    
         self.vis.spiral_points(Config.SPIRAL_ARC,
                           Config.SPIRAL_SIZE,
-                          self.colorIdx*2)
+                          self.colorIdx*math.pi)
         
         
         

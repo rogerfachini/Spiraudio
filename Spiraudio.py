@@ -24,6 +24,8 @@ class Config:
     AUDIO_SAMPLE_RATE = 2000      #Number of audio samples per frame for the microphone
     INPUT_BLOCK_TIME = 0.01      #Time in seconds of each microphone sample
 
+    COLORS = [(0,0,0), (255,0,0,),(0,255,0),(0,0,255), (255,255,0), (0,255,255)]
+
     def loadFromFile(self):
         self._cfg = ConfigParser.ConfigParser()
         logging.info('Loading config file: %s',self.CONFIG_FILE)
@@ -255,18 +257,20 @@ class Visuals:
         """Converts between polar and cartesian coordinate systems"""
         return (dist * math.cos(angle), dist * math.sin(angle))
 
-    def spiral_points(self, arc=1, size=5):
+    def spiral_points(self, arc=1, size=5, startOffset = 0):
         """
         Resets the spiral and starts it off. 
         """
         #Clear the two point variables
         self.pointA = (0,0)  
         self.pointC = (0,0)
+        self.so = startOffset
 
         self.arc = arc
         self.dist = arc
         self.b = size / math.pi
-        self.angle = float(self.dist) / self.b
+        self.angle = float(self.dist) / self.b + self.so  
+        
 
     def increment_spiral(self, offset):
         """
@@ -288,10 +292,10 @@ class Visuals:
         self.pointC = self.p2c(self.dist, self.angle)
 
         #Increment the angle
-        self.angle += float(self.arc) / self.dist
+        self.angle += float(self.arc) / self.dist 
 
         #Recalculate the spiral
-        self.dist = self.b * self.angle / 2
+        self.dist = self.b * (self.angle-self.so) / 2
         
 class CNCServerClient:
     """
@@ -386,6 +390,8 @@ class Main:
     lastBufferPoint = 0
     inputType = 'n'
     drawTracer = False
+    spirals = []
+    colorIdx = 0 
 
     def __init__(self):
         self.logger = logging.getLogger('GUI')
@@ -437,6 +443,8 @@ class Main:
                 self.drawTracer = not self.drawTracer
             elif event.unicode == 's':
                 svg.saveFile()
+            elif event.unicode == 'q':
+                self.newSpiral(0)
                 
             gui.inputType = input.inputType
             gui.vis.inputType = input.inputType
@@ -519,13 +527,12 @@ class Main:
         points = [self._convertCanvasOffset(p) for p in self.pointlistA]
 
         
-        pygame.draw.lines(self.SurfCanvas, (0,0,255), False, points[-2:],2)
+        pygame.draw.lines(self.SurfCanvas, Config.COLORS[self.colorIdx], False, points[-2:],2)
         if self.drawTracer:
             try: pygame.draw.lines(self.SurfCanvas, (255,0,0), False, self.pointlistC[-2:])
             except ValueError:  pass
         
-
-          
+     
     def RenderAudioGraphPoint(self, point):
         p = point/800+50
         self.SurfGraph.set_at((int(self.graphIndex),p),(0,0,255))
@@ -557,6 +564,17 @@ class Main:
         self.SurfGraph.fill((0,0,0))
         bot.setPenPos(50,50)
         self.logger.info('Cleared Canvas!')
+
+    def newSpiral(self, offset):
+        self.vis = Visuals()
+        
+        self.colorIdx += 1   
+        print self.colorIdx     
+        self.vis.spiral_points(Config.SPIRAL_ARC,
+                          Config.SPIRAL_SIZE,
+                          self.colorIdx*2)
+        
+        
         
         
 if __name__ == '__main__':

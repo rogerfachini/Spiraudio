@@ -313,7 +313,7 @@ class CNCServerClient:
     Connects to CNCServer and sends commands to the WaterColorBot for drawing purpouses
     """
     hasConnection = False
-    serverOutput = false
+    serverOutput = False
     def __init__(self):
         #Create Logging instance
         self.logger = logging.getLogger('CNCClient')

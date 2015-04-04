@@ -429,6 +429,7 @@ class Main:
             self.logger.critical('Font Object could not load! Using dummy class...')
 
         pygame.display.set_caption('Spiraudio')
+        pygame.display.set_icon(pygame.image.load('icon.png'))
 
         ratio = Config.PAPER_RATIO[1]/Config.PAPER_RATIO[0]
         size = (int(Config.PAPER_SIZE*ratio),Config.PAPER_SIZE)
